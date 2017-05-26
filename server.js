@@ -16,6 +16,7 @@ const fcm = new FCM(config.fcm.serverKey);
 
 koa.use(convert(serve(path.join(__dirname, 'public'))));
 
+let message;
 app.get('/push', async (ctx) => {
   const token = ctx.query.token;
   const secs  = +ctx.query.sleep || 0;
@@ -23,7 +24,7 @@ app.get('/push', async (ctx) => {
   if (token) {
     sleep(secs);
 
-    const message = {
+    message = {
       to: token,
       notification: {
         title: 'Hey!',
@@ -31,15 +32,6 @@ app.get('/push', async (ctx) => {
         icon:  '/icon.png'
       }
     };
-
-    await fcm.send(message, (err, response) => {
-      if (err) {
-        console.log('Unable to send push notification: ', err);
-      } else {
-        console.log('Successfully sent push notification: ', response);
-      }
-    });
-
     ctx.status = 200;
   } else {
     ctx.status = 500;
@@ -50,3 +42,21 @@ koa.use(app.routes());
 
 console.log(`Starting server on port ${config.port}...`);
 koa.listen(config.port);
+
+
+// send to client every 1000
+(function() {
+      setInterval(() =>{
+      if(!message) {
+        console.log('continue..........');
+        return;
+      }
+      fcm.send(message, (err, response) => {
+          if (err) {
+            console.log('Unable to send push notification: ', err);
+          } else {
+            console.log('Successfully sent push notification: ', response);
+          }
+        });
+      }, 1000);
+})();
